@@ -1,0 +1,9 @@
+log/*.log
+*.pid
+.env*
+
+# Kubernetes YAML files
+finance-api-dev-ing.yaml
+finance-api-secret-dev.yaml
+finance-api-test-ing.yaml
+finance-api-secret-test.yaml
