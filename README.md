@@ -174,7 +174,7 @@ The defaults provided here are meant to be specialized enough to support the
 most common developer workflows without customization, but may be customized.
 
 If specialized containers are needed in the pipeline, they can also be included
-here for use inside of the `Jenkinsile`.
+here for use inside of the `Jenkinsfile`.
 
 * `docker-pod.yaml` - A Kubernetes pod definition used to connect Jenkins to the host node's Docker daemon by mounting `/var/run/docker.sock`, (this is the most straightforward, easiest and also most flexible way. Take caution who is allowed to start Jenkins jobs when running this way, sandbox escapes are certainly possible.)
 * `docker-build.sh` - call `docker build` in a specific way that supports our application (here you can pass any buildkit directives needed like `--ssh=default` for inclusion of ssh keys at build time, or any special instructions related to image caching as needed such as `--no-cache`.)
