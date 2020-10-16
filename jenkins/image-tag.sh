@@ -1,8 +1,4 @@
-#!/usr/bin/env bash
-
-set -o errexit
-set -o nounset
-set -o pipefail
+#!/bin/sh
 
 WORKING_SUFFIX=$(if git status --porcelain | grep -qE '^(?:[^?][^ ]|[^ ][^?])\s'; then echo "-WIP"; else echo ""; fi)
 CURRENT_TAG=$(if TAG=$(git describe --tags --exact-match 2>/dev/null); then echo $TAG; else echo ""; fi)

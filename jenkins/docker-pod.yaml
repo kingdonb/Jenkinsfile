@@ -7,7 +7,7 @@ spec:
       path: /var/run/docker.sock
   containers:
   - name: docker
-    image: docker
+    image: docker.io/docker:git
     volumeMounts:
     - mountPath: /var/run/docker.sock
       name: jenkins-docker-sock
