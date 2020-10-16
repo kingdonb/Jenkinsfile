@@ -179,19 +179,22 @@ here for use inside of the `Jenkinsfile`.
 * `docker-pod.yaml` - A Kubernetes pod definition used to connect Jenkins to the host node's Docker daemon by mounting `/var/run/docker.sock`, (this is the most straightforward, easiest and also most flexible way. Take caution who is allowed to start Jenkins jobs when running this way, sandbox escapes are certainly possible.)
 * `docker-build.sh` - call `docker build` in a specific way that supports our application (here you can pass any buildkit directives needed like `--ssh=default` for inclusion of ssh keys at build time, or any special instructions related to image caching as needed such as `--no-cache`.)
 * `runasroot-dependencies.sh` - Called in `Dockerfile`, a script that runs as root. For installing system dependencies from upstream distribution packages (apk, yum or apt).
-* `docker-push.sh` - For continuous delivery in dev, a uniquely tagged image based on the Git Commit SHA is pushed whenever a build succeeds (this happens in parallel with CI, and so, regardless of any CI test success or failure.)
-* `image-tag.sh` - On success of the CI job, a semantic image tag is generated based on the branch revision or tag. This script reads output from git to generate that tag string.
+* `docker-push.sh` - For continuous delivery in dev, a uniquely tagged image based on the Git Commit SHA is pushed whenever a build succeeds (this push happens in parallel with CI, and so may result in eg. early "dev" canary deployment promotion, regardless of any CI test success or failure.)
+* `image-tag.sh` - On success of the CI job, a semantic image tag is written based on the git branch label and SHA, or git tag. This script was adapted from [an example provided by our friends at Weaveworks][] to run in plain `sh` shell; it reads output from git commands to generate an appropriate docker image tag based on the git branch or tag.
 * `docker-hub-tag-success-push.sh` - This script runs in the final "Push" step, to re-tag the image `repo-host/repo/project:12abcd34` as `repo-host/repo/project:{image-tag}` and push the image tag to the remote image repository, published for downstream consumers.
 * `rvm-bundle-cache-build.sh` - Called in `Dockerfile`, this script invokes rvm and handles the heavy lifting of `bundle install` utilizing the buildkit cache volume provider.
-* `rake-ci.sh` - This script is run as the `jenkins` user in the `test` container, as specified by the *Test* stage of `Jenkinsfile`. It need not actually run `rake ci`, but this is connected to a `rake` task that we create in `lib/tasks/ci.rake` for the benefit of centralization.
-* `lib/tasks/ci.rake` - Using `rake ci` as a standard gateway to CI tests provides traceability and uniformity so auditors and developers alike can codify policy decisions and agree about what tests were ran on a given build, or what tests were expected to pass for every promoted release. Modify the default `ci:test` task that `rake ci` defines in this file, so that it runs whatever tests are important for your build validation.
+* `rake-ci.sh` - This script is run as the `jenkins` user in the `test` container, as specified by the *Test* stage of `Jenkinsfile`. It need not actually run `rake ci`, but this is by default connected to a `rake` task that is created in `lib/tasks/ci.rake`, where testing manifests and launch routines can be centralized.
+* `lib/tasks/ci.rake` - We are using `rake ci` as a standard gateway to CI tests such that there is traceability for making policy decisions about testing, and agreement can be maintained regarding what tests are run on a given milestone, or what tests were expected to pass for every promoted release.
 
-If some tests take too long and it is holding up the build, then those tests should not run in `rake ci`. A good guideline for tests that are too large says that integration tests which run to completion on each iteration and report feedback within a total of 5 minutes are the most valuable for CI. Since building the test image itself will inevitably take up at least a minute or two inside of this cycle, you should strive to have all your validation tests execute to completion and report results in less than about 3 minutes.
+Repo admins are meant to modify the default `ci:test` task that `rake ci` defers to in `lib/tasks/ci.rak`, so that whatever tests are important for your PR validation run there.
 
-This is only a guideline, if your important tests take longer than 3 minutes then you should run them in CI, but also consider working on ways to make them slimmer.
+If some tests take too long and it is holding up progress, then those tests should perhaps not run in `rake ci`. A good guideline for tests that are too large says integration tests which run to completion on each commit should report feedback within maximum about 5 minutes are the most valuable. Since baseline for building a new image may inevitably take up at least a minute (or two) in this cycle, teams should strive to have all CI tests execute in under about 3 minutes.
+
+Parallelism should be taken advantage of to maintain this property if needed, as longer cycle times will severely hinder quick iteration. This is only a guideline, if your important tests necessarily take longer than 3-5 minutes then you should still run them in CI, (but do consider if there may be ways to make them slimmer.)
 
 ### End
 
 [covered here]: https://eileencodes.com/posts/the-sprockets-4-manifest/
 [normalized in the Oracle adapter]: https://github.com/rsim/oracle-enhanced#rails-52
 [bundle audit]: https://github.com/rubysec/bundler-audit
+[an example provided by our friends at Weaveworks]: https://github.com/weaveworks/wksctl/blob/78cf6e57cfc28fc720b6ddfe6bfc1da739e4c759/tools/image-tag
