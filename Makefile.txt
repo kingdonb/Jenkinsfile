@@ -1,0 +1,9 @@
+DOCKER_REPO_PROJ := nd-employee-lookup-example
+
+.PHONY: build
+GIT_COMMIT := $(shell git rev-parse --short=8 HEAD)
+
+build:
+	DOCKER_REPO_PROJ=$(DOCKER_REPO_PROJ) \
+	DOCKER_REPO_USER=admin DOCKER_REPO_HOST=registry.kingdonb.dev \
+		GIT_COMMIT=$(GIT_COMMIT) ./jenkins/docker-build.sh
