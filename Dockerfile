@@ -13,7 +13,7 @@ RUN bundle config set app_config .bundle && \
   bundle config set path /tmp/.cache/bundle && mkdir -p /tmp/.cache/bundle
 COPY --chown=rvm Gemfile Gemfile.lock .ruby-version ${APPDIR}/
 RUN echo 'gem: --no-document' > ~/.gemrc && \
-  rvm ${RUBY}@global do gem install bundler && \
+  rvm ${RUBY}@global do gem update bundler && \
   rvm ${RUBY}@global do gem update --system
 
 FROM builder-base AS bundler
