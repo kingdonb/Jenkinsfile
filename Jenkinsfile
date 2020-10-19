@@ -1,7 +1,7 @@
 // these values are configured on a per-project basis:
 dockerRepoHost = 'registry.kingdonb.dev'
 dockerRepoUser = 'admin' // (this User must match the value in jenkinsDockerSecret)
-dockerRepoProj = 'finance-api'
+dockerRepoProj = 'nd-foapal-gem'
 
 // these refer to a Jenkins secret (by secret "id"), can be in Jenkins global scope:
 jenkinsDockerSecret = 'docker-registry-admin'
@@ -26,6 +26,7 @@ pipeline {
               ]) {
             script {
               gitCommit = env.GIT_COMMIT.substring(0,8)
+              imageTag = sh (script: "./jenkins/image-tag.sh", returnStdout: true)
             }
             sh """\
             #!/bin/sh
@@ -40,8 +41,6 @@ pipeline {
         }
       }
     }
-    // In jenkins-specific test image, run "rake ci:test" with copied artifacts
-    // from previous stage's 'bundle install' and 'rails assets:precompile'
     stage('Dev') {
       parallel {
         stage('Push') {
@@ -82,20 +81,18 @@ pipeline {
                 """.stripIndent()
             }
           }
+          options { skipDefaultCheckout(true) }
           steps {
+            // In jenkins-specific test image which has been set up for Jenkins
+            // to run with user 1000, NB. this is a hard requirement of Jenkins,
+            // (this is not a requirement of docker or rvm-docker-support)
             container('test') {
-              sh (script: "./jenkins/rake-ci.sh")
-              script {
-                imageTag = sh (script: "./jenkins/image-tag.sh", returnStdout: true)
-              }
+              sh (script: "cd /home/rvm/app && ./jenkins/rake-ci.sh")
             }
           }
         }
       }
     }
-    // A branch tag has semantic meaning, "deploy me to staging environment"
-    // At this point, fluxcd may pick up the structure {branchname}-abcd1234
-    // and infer that a test passed, so staging deployment can proceed.
     stage('Push Tag') {
       steps {
         container('docker') {
