@@ -12,6 +12,9 @@ USER ${RVM_USER}
 RUN bundle config set app_config .bundle && \
   bundle config set path /tmp/.cache/bundle && mkdir -p /tmp/.cache/bundle
 COPY --chown=rvm Gemfile Gemfile.lock .ruby-version ${APPDIR}/
+RUN echo 'gem: --no-document' > ~/.gemrc && \
+  rvm ${RUBY}@global do gem update bundler && \
+  rvm ${RUBY}@global do gem update --system
 
 FROM builder-base AS bundler
 RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan bitbucket.org 18.205.93.2 18.205.93.0 >> ~/.ssh/known_hosts
@@ -46,6 +49,7 @@ FROM slug AS jenkins
 USER root
 RUN useradd -m -u 1000 -g rvm jenkins
 USER jenkins
+ENV LD_LIBRARY_PATH /opt/oracle/instantclient_19_8
 RUN bundle config set app_config .bundle && \
     bundle config set path vendor/bundle
 
