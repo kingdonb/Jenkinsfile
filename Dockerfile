@@ -49,6 +49,7 @@ FROM slug AS jenkins
 USER root
 RUN useradd -m -u 1000 -g rvm jenkins
 USER jenkins
+ENV LD_LIBRARY_PATH /opt/oracle/instantclient_19_8
 RUN bundle config set app_config .bundle && \
     bundle config set path vendor/bundle
 
