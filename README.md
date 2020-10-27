@@ -186,7 +186,7 @@ here for use inside of the `Jenkinsfile`.
 * `rake-ci.sh` - This script is run as the `jenkins` user in the `test` container, as specified by the *Test* stage of `Jenkinsfile`. It need not actually run `rake ci`, but this is by default connected to a `rake` task that is created in `lib/tasks/ci.rake`, where testing manifests and launch routines can be centralized.
 * `lib/tasks/ci.rake` - We are using `rake ci` as a standard gateway to CI tests such that there is traceability for making policy decisions about testing, and agreement can be maintained regarding what tests are run on a given milestone, or what tests were expected to pass for every promoted release.
 
-Repo admins are meant to modify the default `ci:test` task that `rake ci` defers to in `lib/tasks/ci.rak`, so that whatever tests are important for your PR validation run there.
+Repo admins are meant to modify the default `ci:test` task that `rake ci` defers to in `lib/tasks/ci.rake`, so that whatever tests are important for your PR validation run there.
 
 If some tests take too long and it is holding up progress, then those tests should perhaps not run in `rake ci`. A good guideline for tests that are too large says integration tests which run to completion on each commit should report feedback within maximum about 5 minutes are the most valuable. Since baseline for building a new image may inevitably take up at least a minute (or two) in this cycle, teams should strive to have all CI tests execute in under about 3 minutes.
 
