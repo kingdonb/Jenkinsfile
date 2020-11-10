@@ -1,5 +1,8 @@
 #!/bin/bash
 
+## Not Used - this strategy was obviated by gemsets and upstream support
+## The script 'jenkins/rvm-bundle-cache-build.sh' is not used anymore.
+
 if [[ -z "$1" ]]; then
   echo "Must provide RUBY_VERSION as first argument" 1>&2
   echo "(Example: 'RUN $0 \${RUBY}' in Dockerfile)" 1>&2

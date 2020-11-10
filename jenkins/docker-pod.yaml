@@ -13,4 +13,11 @@ spec:
       name: jenkins-docker-sock
     command:
     - cat
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 50m
+      limits:
+        memory: 2Gi
+        cpu: 1
     tty: true
