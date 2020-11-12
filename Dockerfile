@@ -1,4 +1,4 @@
-# syntax = docker/dockerfile:experimental
+# syntax = registry.kingdonb.dev/docker/dockerfile:experimental
 FROM kingdonb/rvm-supported:latest as builder-base
 LABEL maintainer="Kingdon Barrett <kingdon.b@nd.edu>"
 ENV APPDIR="/home/${RVM_USER}/app"
