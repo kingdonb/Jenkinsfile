@@ -61,7 +61,7 @@ pipeline {
                 export DOCKER_REPO_PROJ="${dockerRepoProj}"
                 export GIT_COMMIT="${gitCommit}"
                 ./jenkins/docker-push.sh
-                """
+                """.stripIndent()
               }
             }
           }
