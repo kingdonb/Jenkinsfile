@@ -1,7 +1,7 @@
 // these values are configured on a per-project basis:
 dockerRepoHost = 'registry.kingdonb.dev'
 dockerRepoUser = 'admin' // (this User must match the value in jenkinsDockerSecret)
-dockerRepoProj = 'nd-foapal-gem'
+dockerRepoProj = 'hrpy-api'
 
 // these refer to a Jenkins secret (by secret "id"), can be in Jenkins global scope:
 jenkinsDockerSecret = 'docker-registry-admin'
@@ -22,16 +22,20 @@ pipeline {
         container('docker') {
           withCredentials([sshUserPrivateKey(
                 credentialsId: jenkinsSshSecret,
-                keyFileVariable: 'SSH_KEY')
-              ]) {
+                keyFileVariable: 'SSH_KEY'),
+              [$class: 'UsernamePasswordMultiBinding',
+              credentialsId: jenkinsDockerSecret,
+              usernameVariable: 'DOCKER_REPO_USER',
+              passwordVariable: 'DOCKER_REPO_PASSWORD']
+          ]) {
             script {
               gitCommit = env.GIT_COMMIT.substring(0,8)
               imageTag = sh (script: "./jenkins/image-tag.sh", returnStdout: true)
             }
             sh """\
             #!/bin/sh
+            export DOCKER_REPO_USER DOCKER_REPO_PASSWORD
             export DOCKER_REPO_HOST="${dockerRepoHost}"
-            export DOCKER_REPO_USER="${dockerRepoUser}"
             export DOCKER_REPO_PROJ="${dockerRepoProj}"
             export GIT_COMMIT="${gitCommit}"
             eval \$(ssh-agent) && ssh-add ${SSH_KEY} && ssh-add -l
