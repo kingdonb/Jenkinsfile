@@ -1,0 +1,87 @@
+// these values are configured on a per-project basis:
+dockerRepoHost = 'registry.kingdonb.dev'
+dockerRepoUser = 'admin' // (this User must match the value in jenkinsDockerSecret)
+dockerRepoProj = 'example-app'
+
+// blank values that are filled in by pipeline steps below:
+gitCommit = ''
+imageTag = ''
+
+pipeline {
+  agent {
+    kubernetes { yamlFile "jenkins/docker-pod.yaml" }
+  }
+  stages {
+    // Build a Docker image and keep it locally for now
+    stage('Build') {
+      steps {
+        container('docker') {
+          script {
+            gitCommit = env.GIT_COMMIT.substring(0,8)
+            imageTag = sh (script: "./jenkins/image-tag.sh", returnStdout: true)
+          }
+          sh """\
+          #!/bin/sh
+          export DOCKER_REPO_USER=''     # fixme - these values should be unset
+          export DOCKER_REPO_PASSWORD='' # fixme - these values should be unset
+          export DOCKER_REPO_HOST="${dockerRepoHost}"
+          export DOCKER_REPO_PROJ="${dockerRepoProj}"
+          export GIT_COMMIT="${gitCommit}"
+          ./jenkins/docker-build.sh
+          """.stripIndent()
+        }
+      }
+    }
+    stage('Test') {
+      parallel {
+        stage('Push Tags') {
+          steps {
+            container('docker') {
+              sh """\
+              #!/bin/sh
+              export DOCKER_REPO_USER=''     # fixme - these values should be unset
+              export DOCKER_REPO_PASSWORD='' # fixme - these values should be unset
+              export DOCKER_REPO_HOST="${dockerRepoHost}"
+              export DOCKER_REPO_PROJ="${dockerRepoProj}"
+              export GIT_COMMIT="${gitCommit}"
+              export GIT_TAG_REF="${imageTag}"
+              # push both tags at once, irrespective of tests or passing:
+              ./jenkins/docker-push.sh
+              ./jenkins/docker-hub-tag-success-push.sh
+              """.stripIndent()
+            }
+          }
+        }
+        stage('Run Tests') {
+          agent {
+            kubernetes {
+              yaml """\
+                apiVersion: v1
+                kind: Pod
+                spec:
+                  containers:
+                  - name: test
+                    image: ${dockerRepoHost}/${dockerRepoUser}/${dockerRepoProj}:jenkins_${gitCommit}
+                    imagePullPolicy: Never
+                    securityContext:
+                      runAsUser: 1000
+                    command:
+                    - cat
+                    tty: true
+                """.stripIndent()
+            }
+          }
+          options { skipDefaultCheckout(true) }
+          steps {
+            // In jenkins-specific test image which has been set up for Jenkins
+            // to run with user 1000, NB. this is a hard requirement of Jenkins,
+            // (this is not a requirement of docker or rvm-docker-support)
+            container('test') {
+              sh (script: "cd /home/rvm/app && ./jenkins/rake-ci.sh")
+            }
+          }
+        }
+      }
+    }
+  }
+}

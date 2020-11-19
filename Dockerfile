@@ -68,5 +68,5 @@ FROM slug as test
 RUN bundle config set app_config .bundle
 ENV LD_LIBRARY_PATH /opt/oracle/instantclient_19_8
 # If your app uses a different startup routine or entrypoint, set it up here
-CMD  bash --login -c 'rvm ${RUBY}@${GEMSET} do bundle exec rails server -b 0.0.0.0'
+CMD rvm ${RUBY}@${GEMSET} do bundle exec rails server -b 0.0.0.0
 EXPOSE 3000
