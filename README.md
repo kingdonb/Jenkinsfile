@@ -11,6 +11,133 @@ application's container registry or image repository, but otherwise the files
 in this repo are meant to be copied into your project unmodified to support a
 Jenkins pipeline that builds and tests your application on Jenkins/Kubernetes.
 
+```Jenkinsfile
+dockerRepoHost = 'registry.kingdonb.dev'
+dockerRepoUser = 'admin'
+dockerRepoProj = 'hrpy-api'
+
+jenkinsDockerSecret = 'docker-registry-admin'
+jenkinsSshSecret    = 'jenkins-ssh'
+
+gitCommit = ''
+imageTag = ''
+```
+
+- `dockerRepoHost`: image registry ("image repository") address
+- `dockerRepoUser`: a "registry user" - eg. push to `registry.kingdonb.dev/admin/hrpy-api`
+- `dockerRepoProj`: project name, or app image name
+
+The `dockerRepo*` values above should be varied on a per-project basis.
+
+- `jenkinsDockerSecret`:
+
+If your registry requires a push secret, have a Jenkins admin load it into the
+Jenkins server's credentials store and refer to it here by its "credential id".
+
+- `jenkinsSshSecret`:
+
+If your build requires access to internal git dependencies or any repository
+protected by SSH encryption keys, have a Jenkins admin load the SSH key here.
+(Jenkins' BlueOcean front end interface has generated `jenkins-ssh` for us.)
+
+These jenkins*Secret values usually do not vary from one project to the next.
+
+- `gitCommit = ''`
+- `imageTag = ''`
+
+These variables should remain unset. They will be populated by the pipeline
+scripts below, making use of the Jenkinsfile's implicit SCM checkout step.
+
+If you are building from a tag ref, `imageTag` will detect the tag and your
+generated image will bear that tag when it is pushed to the ECR image repo.
+
+If your build is from a branch ref, `gitCommit` is populated with the 8-char
+short git SHA; Jenkins will attempt to push that tag on success, instead.
+
+In that case, through `imageTag` a value like `a1b2c3d9-example` is written,
+for a commit with that short hash on a branch named `example`. It is shown
+pushed to the ECR image repository.
+
+A simpler example that does not take different push actions based on a failed
+or successful test run and always pushes both gitCommit and imageTag is in
+`examples/Jenkins.minimal`. If your registry or dependencies are private, you
+will most likely need to use the full Jenkinsfile instead.
+
+Project teams are welcome to tailor or modify these steps inside your repo!
+
+#### Repository Structure
+
+From this repository, you should copy:
+
+`jenkins/` - Copy this directory of scripts into your repo, and modify
+`rake-ci.sh` to suit your needs. This is the main test executor script.
+The rest of these files should be kept unmodified.
+
+`Jenkinsfile` or `examples/Jenkinsfile.minimal` - Read the information above to
+understand which of these example files to copy to `Jenkinsfile` in the
+repository project root directory. Your project should only keep one.
+
+`lib/tasks/ci.rake` - This is a basic smoke test for CI. If your project does
+not yet have any test suite, this can be used to guarantee that each successful
+image build that passes the Test stage has completed `bundle install`, and can
+also at least run `bundle check` and load Rails into the Ruby VM without error.
+If you prefer to run your own test suite, edit `jenkins/rake-ci.sh` and adding
+this file to your repository can be skipped.
+
+Invoke the `ci:test` rake task manually by running: `rake ci`.
+
+`.dockerignore`, `.gitignore`, `.stignore` - When developers handle tokens and
+secrets, care must be taken to prevent them from being copied into git. Now
+with containers, there is a new risk that secrets are accidentally copied in a
+`docker build` image. Copy these and take care when handling secrets that you
+add any secret files to these listings, so that you can mitigate this. (Devs
+can also mitigate this risk by always letting the pipeline build the images.)
+
+`Makefile` - running `make` in this Jenkinsfile-example directory creates a
+tarball, `../Jenkinsfile-example.tar.gz`, that contains the latest version of
+each of these files, so you can copy them all into your project at once.
+
+`Makefile.txt` - to run `docker build` as Jenkins does it, some params must
+be set. This makefile sets up those parameters just as the Build stage does.
+It then calls `jenkins/docker-build.sh` just as the Build stage does, this is
+useful when testing a change in the Dockerfile, to re-run and verify it locally
+before pushing again to git; then you can avoid repeated pipeline failures.
+You can save this file as `Makefile`, or run `make -f Makefile.txt` to use it.
+
+And `Dockerfile`, of course, which can be customized if needed for your app.
+If you are running an API with no asset pipeline, you can delete some lines.
+Otherwise, if your application has a front-end and uses asset pipeline, you can
+uncomment the commented lines.
+
+```Dockerfile
+FROM gem-bundle AS assets
+COPY --chown=${RVM_USER} Rakefile ${APPDIR}
+COPY --chown=${RVM_USER} config ${APPDIR}/config
+COPY --chown=${RVM_USER} bin ${APPDIR}/bin
+COPY --chown=${RVM_USER} app/assets ${APPDIR}/app/assets
+# COPY --chown=${RVM_USER} lib/nd_workflow_class_methods.rb ${APPDIR}/lib/nd_workflow_class_methods.rb
+# COPY --chown=${RVM_USER} vendor/assets ${APPDIR}/vendor/assets
+# COPY --chown=${RVM_USER} app/javascript ${APPDIR}/app/javascript/
+RUN --mount=type=cache,uid=999,gid=1000,target=/home/rvm/app/public/assets \
+  rvm ${RUBY}@${GEMSET} do bundle exec rails assets:precompile && cp -ar /home/rvm/app/public/assets /tmp/assets
+```
+
+At this stage of the build, the `Dockerfile` has copied only the needed files
+so that `asset:precompile` does not repeat again unnecessarily when unrelated
+files change, so that it can be re-run only when needed. Some applications will
+require additional files like the still- commented lines shown here.
+
+You may tailor this section, or any others, to your app's needs as required.
+Generally, the intention of this guidance is that `Dockerfile` should not need
+to change very much, (even at all,) other than as described here. (Instead, one
+should customize scripts in `jenkins/`, keeping the overall structure intact.)
+
+#### Repository Structure End
+
+Those are all of the files needed to add Jenkins pipeline support to a standard
+Rails app structure, copy them to your git repo and add a Blue Ocean pipeline
+for your GitHub repository in order to begin using the pipeline!
+
 ### Common Rails 5 upgrade issues
 
 ##### Rails 5 requires Ruby 2.2 or newer, and Rails 6 requires Ruby 2.5
