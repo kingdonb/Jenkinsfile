@@ -81,6 +81,13 @@ pipeline {
                       runAsUser: 1000
                     command:
                     - cat
+                    resources:
+                      requests:
+                        memory: 256Mi
+                        cpu: 50m
+                      limits:
+                        memory: 1Gi
+                        cpu: 1200m
                     tty: true
                 """.stripIndent()
             }
