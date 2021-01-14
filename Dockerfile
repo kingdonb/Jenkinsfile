@@ -40,7 +40,7 @@ RUN echo 'export PATH="$PATH:$HOME/app/bin"' >> ~/.profile \
 #   rvm ${RUBY}@${GEMSET} do bundle exec rails assets:precompile && cp -ar /home/rvm/app/public/assets /tmp/assets
 
 FROM gem-bundle AS builder
-COPY --from=assets --chown=${RVM_USER} /tmp/assets ${APPDIR}/public/assets
+# COPY --from=assets --chown=${RVM_USER} /tmp/assets ${APPDIR}/public/assets
 FROM builder AS slug
 COPY --chown=${RVM_USER} . ${APPDIR}
 USER ${RVM_USER}
@@ -53,6 +53,8 @@ COPY --from=slug --chown=${RVM_USER} \
   ${APPDIR} ${APPDIR}
 USER root
 RUN useradd -m -u 1000 -g rvm jenkins
+RUN chgrp rvm -R /home/${RVM_USER}/app
+RUN chmod g+w -R /home/${RVM_USER}/app
 USER jenkins
 ENV LD_LIBRARY_PATH /opt/oracle/instantclient_19_8
 

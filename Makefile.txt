@@ -1,4 +1,4 @@
-DOCKER_REPO_PROJ := nd-employee-lookup-example
+DOCKER_REPO_PROJ := myapp
 
 .PHONY: build
 GIT_COMMIT := $(shell git rev-parse --short=8 HEAD)
