@@ -3,7 +3,7 @@ log/*.log
 .env*
 
 # Kubernetes YAML files
-finance-api-dev-ing.yaml
-finance-api-secret-dev.yaml
-finance-api-test-ing.yaml
-finance-api-secret-test.yaml
+myapp-dev-ing.yaml
+myapp-secret-dev.yaml
+myapp-test-ing.yaml
+myapp-secret-test.yaml

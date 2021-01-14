@@ -1,7 +1,7 @@
 // these values are configured on a per-project basis:
 dockerRepoHost = 'registry.kingdonb.dev'
 dockerRepoUser = 'admin' // (this User must match the value in jenkinsDockerSecret)
-dockerRepoProj = 'hrpy-api'
+dockerRepoProj = 'myapp'
 
 // these refer to a Jenkins secret (by secret "id"), can be in Jenkins global scope:
 jenkinsDockerSecret = 'docker-registry-admin'
